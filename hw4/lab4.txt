@@ -1,0 +1,194 @@
+Downloading and unzipping the buggy coreutils:
+$ wget http://web.cs.ucla.edu/classes/winter17/cs35L/assign/coreutils-with-bug.tar.gz
+$ tar -xzvf coreutils-with-bug.tar.gz
+
+Building the old version of coreutils using './configure' and 'make' without the patch results in an error
+due to conflicting definitions of the 'futimens' function in utimens.h and /usr/include/sys/stat.h:
+In file included from utimecmp.c:41:
+utimens.h:2: error: conflicting types for 'futimens'
+/usr/include/sys/stat.h:374: note: previous declaration of 'futimens' was here
+
+The patch solves this issue by renaming the 'futimens' function in coreutils
+as 'coreutils_futimens', thus avoiding the naming conflict. 
+
+To apply the patch, download the patch file:
+$ wget http://web.cs.ucla.edu/classes/winter17/cs35L/assign/coreutils.diff
+
+Then, navigate to the coreutils-with-bug file, and enter the command 'patch -p0 < coreutils.diff'.
+
+Now, we can rebuild coreutils using the 'make' command.
+
+Entering the following commands creates a temporary directory and several 
+files, one of which has a time stamp very far in the past:
+$ tmp=$(mktemp -d)
+$ cd $tmp
+$ touch -d '1918-11-11 11:00 GMT' wwi-armistice
+$ touch now
+$ sleep 1
+$ touch now1
+
+Using the installed ls results in normal output:
+$ ls -lt --full-time
+-rw-r--r-- 1 classdya class 0 2017-02-02 23:15:41.659666828 -0800 now1
+-rw-r--r-- 1 classdya class 0 2017-02-02 23:15:38.238545443 -0800 now
+-rw-r--r-- 1 classdya class 0 1918-11-11 03:00:00.000000000 -0800 wwi-armistice
+
+However, using the coreutils-with-bug version of ls has the files in the wrong order:
+$ /u/eng/class/classdya/coreutils-with-bug/src/ls -lt --full-time
+-rw-r--r-- 1 classdya class 0 1918-11-11 03:00:00.000000000 -0800 wwi-armistice
+-rw-r--r-- 1 classdya class 0 2017-02-02 23:15:41.659666828 -0800 now1
+-rw-r--r-- 1 classdya class 0 2017-02-02 23:15:38.238545443 -0800 now
+
+When in the SEASnet Linux servers, setting the time stamp of a file to a date
+far in the past actually causes the date to be displayed incorrectly. Both the
+installed version of ls and the coreutils-with-bug version of ls display the date as
+December 17, 2054.
+$ touch -d '1918-11-11 11:00 GMT' wwi-armistice
+$ ls -lt --full-time
+-rw-r--r--  1 classdya class        0 2054-12-17 09:28:16.000000000 -0800 wwi-armistice
+drwxr-xr-x 11 classdya class     4096 2017-02-02 23:06:09.911805000 -0800 coreutils-with-bug
+-rwxr-xr-x  1 classdya class     3352 2017-01-28 22:43:57.997090000 -0800 comm.py
+-rw-r--r--  1 classdya class       38 2017-01-28 21:49:28.108359000 -0800 temp2
+-rw-r--r--  1 classdya class       27 2017-01-28 21:49:14.263083000 -0800 temp
+$ /u/eng/class/classdya/coreutils-with-bug/src/ls -lt --full-time
+-rw-r--r--  1 classdya class        0 2054-12-17 09:28:16.000000000 -0800 wwi-armistice
+drwxr-xr-x 11 classdya class     4096 2017-02-02 23:06:09.911805000 -0800 coreutils-with-bug
+-rwxr-xr-x  1 classdya class     3352 2017-01-28 22:43:57.997090000 -0800 comm.py
+-rw-r--r--  1 classdya class       38 2017-01-28 21:49:28.108359000 -0800 temp2
+-rw-r--r--  1 classdya class       27 2017-01-28 21:49:14.263083000 -0800 temp
+
+Debugging the ls executable:
+$ gdb /u/eng/class/classdya/coreutils-with-bug/src/ls 
+
+Entering 'info functions' lists all defined functions:
+(gdb) info functions
+All defined functions:
+
+File ls.c:
+int main(int, char **);
+void usage(int);
+static size_t calculate_columns(_Bool);
+static void clear_files(void);
+static int compare_atime(V, V);
+static int compare_ctime(V, V);
+static int compare_extension(V, V);
+static int compare_mtime(V, V);
+static int compare_name(V, V);
+static int compare_size(V, V);
+static int compare_version(V, V);
+static int compstr_atime(V, V);
+static int compstr_ctime(V, V);
+static int compstr_extension(V, V);
+static int compstr_mtime(V, V);
+static int compstr_name(V, V);
+static int compstr_size(V, V);
+...
+
+In ls.c, it looks like the function called 'compare_mtime' might be of interest, since we need 
+to compare the modification times of files in order to list them from most recent to oldest with the -t flag. 
+
+Setting a breakpoint at this function:
+(gdb) break compare_mtime
+Breakpoint 1 at 0x403430: file ../lib/timespec.h, line 48.
+
+Now, we can run the program, and it will stop when it reaches this function:
+(gdb) run -lt
+Starting program: /w/home.17/class/classdya/coreutils-with-bug/src/ls -lt
+[Thread debugging using libthread_db enabled]
+
+Breakpoint 1, compare_mtime (a=0x617160, b=0x617210) at ls.c:2884
+2884	static int compare_mtime (V a, V b) { return cmp_mtime (a, b, xstrcoll); }
+
+
+Entering 'list' will display the surrounding 10 lines:
+(gdb) list
+2879	{
+2880	  int diff = timespec_cmp (get_stat_mtime (&b->stat),
+2881				   get_stat_mtime (&a->stat));
+2882	  return diff ? diff : cmp (a->name, b->name);
+2883	}
+2884	static int compare_mtime (V a, V b) { return cmp_mtime (a, b, xstrcoll); }
+2885	static int compstr_mtime (V a, V b) { return cmp_mtime (a, b, strcmp); }
+2886	static int rev_cmp_mtime (V a, V b) { return compare_mtime (b, a); }
+2887	static int rev_str_mtime (V a, V b) { return compstr_mtime (b, a); }
+2888	
+
+
+Stepping into the 'cmp_mtime' function:
+(gdb) s
+cmp_mtime (a=0x617160, b=0x617210) at ls.c:2884
+2884	static int compare_mtime (V a, V b) { return cmp_mtime (a, b, xstrcoll); }
+(gdb) list
+2879	{
+2880	  int diff = timespec_cmp (get_stat_mtime (&b->stat),
+2881				   get_stat_mtime (&a->stat));
+2882	  return diff ? diff : cmp (a->name, b->name);
+2883	}
+2884	static int compare_mtime (V a, V b) { return cmp_mtime (a, b, xstrcoll); }
+2885	static int compstr_mtime (V a, V b) { return cmp_mtime (a, b, strcmp); }
+2886	static int rev_cmp_mtime (V a, V b) { return compare_mtime (b, a); }
+2887	static int rev_str_mtime (V a, V b) { return compstr_mtime (b, a); }
+2888	
+
+
+Stepping into the 'timespec_cmp' function:
+(gdb) s
+timespec_cmp (a=0x617160, b=0x617210) at ../lib/timespec.h:48
+48	  int diff = a.tv_sec - b.tv_sec;
+(gdb) list
+43	/* Return negative, zero, positive if A < B, A == B, A > B, respectively.
+44	   Assume the nanosecond components are in range, or close to it.  */
+45	static inline int
+46	timespec_cmp (struct timespec a, struct timespec b)
+47	{
+48	  int diff = a.tv_sec - b.tv_sec;
+49	  return diff ? diff : a.tv_nsec - b.tv_nsec;
+50	}
+51	
+52	# if ! HAVE_DECL_NANOSLEEP
+
+Here we see a potential problem in the line 'int diff = a.tv_sec - b.tv_sec'. Because the 
+variable 'diff' is a signed int, the maximum value it can take on is 2147483647. This means 
+that if the difference in times is greater than this amount in seconds (or ~68 years), an 
+overflow will occur, resulting in the incorrect value being returned. One solution is to 
+simply return -1, 0, or 1 if A < B, A == B, or A > B. 
+
+In order to implement this change, we create a copy of the timespec.h file, implement our changes,
+then run the 'diff' command on the original and our fixed version.
+$ cd coreutils-with-bug/lib
+$ cp timespec.h _timespec.h
+
+Now, open _timespec.h and replace the contents of the 'timespec_cmp' function with:
+{
+  if (a.tv_sec < b.tv_sec) {return -1;}
+  else if (a.tv_sec == b.tv_sec) {return 0;}
+  else if (a.tv_sec > b.tv_sec) {return 1;}
+}
+
+Create the diff file:
+$ diff -u timespec.h _timespec.h > lab4.diff
+
+Implement the change:
+$ patch -p0 < lab4.diff
+
+Remove the copy and diff file and rebuild using 'make'.
+
+Now, the 'ls -lt' command should work properly:
+$ cd $tmp
+$ /u/eng/class/classdya/coreutils-with-bug/src/ls -lt --full-time
+-rw-r--r-- 1 classdya class 0 2017-02-03 14:18:49.438584754 -0800 now1
+-rw-r--r-- 1 classdya class 0 2017-02-03 14:18:42.285272966 -0800 now
+-rw-r--r-- 1 classdya class 0 1918-11-11 03:00:00.000000000 -0800 wwi-armistice
+$ ls -lt --full-time
+-rw-r--r-- 1 classdya class 0 2017-02-03 14:18:49.438584754 -0800 now1
+-rw-r--r-- 1 classdya class 0 2017-02-03 14:18:42.285272966 -0800 now
+-rw-r--r-- 1 classdya class 0 1918-11-11 03:00:00.000000000 -0800 wwi-armistice
+
+
+
+
+
+
+
+
+

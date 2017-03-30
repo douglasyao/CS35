@@ -1,0 +1,18 @@
+1. Because the goto statement in line 2036 to case_long_iso_time_style was
+removed, this line can be taken out, since it names the statement to be jumped
+to in the goto statement. However, it's not technically necessary to take this
+line out, since all it does is give the following line a name. The code will
+run fine even with it present. 
+
+2. The code is now set up so that the format defaults to POSIX rather than ISO
+if the locale does not have a specified style. This could be problematic if the
+user is not from an English-speaking country, because the default POSIX format
+lists the month in English.
+
+3. An error occurs: IndexError: list index out of range. This error occurs
+because the choice function from the random module requires the input sequence
+to not be empty.
+
+4. A syntax error occurs. Exceptions in Python 3 are not iterable, whereas they
+are in Python 2.
+

@@ -1,0 +1,49 @@
+Running the command 'sort --version' shows that we are using coreutils version 8.4, which does not contain
+the --parallel option for sort. To use the newest version of sort, we add /usr/local/cs/bin/ to our executable search path:
+
+$ export PATH=/usr/local/cs/bin:PATH
+
+Now, we are using coreutils version 8.24, which has the --parallel option for sort.
+
+
+Generating the file of random numbers:
+
+$ od -An -tf4 -N 40000000 /dev/urandom | tr -s ' ' '\n' | sed '1d' > rand
+
+The '-An' option to od prevents the first column, containing byte offset information, from being outputted.
+The '-tf4' option means to set the output format as floating point, with 4 bytes per integer. We want to have
+single precision floating point numbers rather than the default double precision, which has 8 bytes per integer.
+The '-N' option means to read in 40000000 bytes, which corresponds to 10000000 numbers.
+
+Next, we use tr to replace the delimiter (in the case of the output from od, 2 spaces) with newlines. 
+The '-s' option ensures that each number is separated by only one newline.
+sed '1d' removes the first line of the output, which is a newline. We write to a file called rand.
+
+Timing sort:
+$ time -p sort -g rand > /dev/null
+real 18.81
+user 99.87
+sys 0.33
+
+$ time -p sort -g --parallel=1 rand > /dev/null
+real 93.39
+user 93.23
+sys 0.15
+
+$ time -p sort -g --parallel=2 rand > /dev/null
+real 49.33
+user 93.74
+sys 0.18
+
+$ time -p sort -g --parallel=4 rand > /dev/null
+real 28.15
+user 94.63
+sys 0.25
+
+$ time -p sort -g --parallel=8 rand > /dev/null
+real 19.29
+user 99.37
+sys 0.34
+
+It appears that the sort command is multithreaded by default, since its performance without setting the --parallel 
+option at all is very similar to setting the --parallel option to 8 threads.

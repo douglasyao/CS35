@@ -1,0 +1,276 @@
+Git is installed in /usr/local/cs/bin on the SEASnet servers, so we add the directory to our path:
+
+$ export PATH=/usr/local/cs/bin:$PATH
+
+Obtain copy of the Diffutils Git repository:
+
+$ mkdir gitroot
+$ cd gitroot
+$ git clone git://git.savannah.gnu.org/diffutils.git
+
+Getting log of changes to master branch of Diffutils:
+$ cd diffutils
+$ git log > git-log.txt
+
+Getting list of tags used for Diffutils:
+$ git tag > git-tags.txt
+
+Open git-log.txt with emacs and use C-s to search for the text "maint: quote 'like this' or "like this", not `like this'"
+$ emacs git-log.txt
+$ C-s maint: quote 'like this'
+
+In the header of the section we see the name of the commit: "commit 62ca21c8c1a5aa3488589dcb191a4ef04ae9ed4f"
+
+Generate the patch file:
+git show 62ca21c8c1a5aa3488589dcb191a4ef04ae9ed4f > quote-patch.txt
+
+Getting version names:
+$ git tag
+v2.7
+v2.8
+v2.8.3
+v2.8.4
+v2.8.6
+v2.8.7
+v2.9
+v3.0
+v3.1
+v3.2
+v3.3
+v3.4
+v3.5
+We can see that version 3.0 has the name 'v3.0'. Check out version 3.0 of Diffutils:
+
+git checkout v3.0 
+
+Apply the patch:
+
+patch -p1 < quote-patch.txt
+
+3 files that were skipped over:
+HACKING
+doc/diffutils.texi
+man/help2man
+
+There were also conflicts in these files:
+cfg.mk
+README-hacking
+README
+src/diff.c
+src/diff3.c
+
+We can view the problems by looking at the outputted .rej files. For cfg.mk, this is the hunk that failed:
+--- cfg.mk
++++ cfg.mk
+@@ -29,7 +29,7 @@
+ # Now that we have better tests, make this the default.
+ export VERBOSE = yes
+ 
+-old_NEWS_hash = becaac48768c0024859d5837010c801e
++old_NEWS_hash = 7d70c18e90495732e671b3c94da01651
+ 
+ # Tell maint.mk's syntax-check rules that diff gets config.h directly or
+ # via diff.h or system.h.
+
+
+If we look at the original cfg.mk file, line 29 has the following:
+old_NEWS_hash = 5ce999f299bd2e9f44cbfef49015b45f
+which doesn't match the patch file. 
+
+The other files have similar conflicts in the following lines:
+README: 9, 60
+README-hacking: 19
+src/diff.c: 876, 906, 942
+src/diff3.c: 433
+
+Now, we see what happened using git status:
+
+$ git status
+On branch branch3.0
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	modified:   NEWS
+	modified:   README
+	modified:   TODO
+	modified:   doc/diagmeet.note
+	modified:   ms/config.bat
+	modified:   ms/config.site
+	modified:   po/en.po
+	modified:   src/analyze.c
+	modified:   src/cmp.c
+	modified:   src/context.c
+	modified:   src/diff.c
+	modified:   src/diff.h
+	modified:   src/diff3.c
+	modified:   src/dir.c
+	modified:   src/ifdef.c
+	modified:   src/io.c
+	modified:   src/sdiff.c
+	modified:   src/side.c
+	modified:   src/system.h
+	modified:   src/util.c
+	modified:   tests/help-version
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+
+	NEWS.orig
+	README-hacking.orig
+	README-hacking.rej
+	README.orig
+	README.rej
+	cfg.mk.orig
+	cfg.mk.rej
+	git-log.txt
+	git-tags.txt
+	ms/config.site.orig
+	quote-patch.txt
+	src/cmp.c.orig
+	src/context.c.orig
+	src/diff.c.orig
+	src/diff.c.rej
+	src/diff.h.orig
+	src/diff3.c.orig
+	src/diff3.c.rej
+	src/dir.c.orig
+	src/sdiff.c.orig
+	src/system.h.orig
+	src/util.c.orig
+	tests/help-version.orig
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+Now, we use Emacs to revert changes to all the modified files other than the single character change.
+
+First, we can open files without a .c extension in emacs and use the vc-diff function (C-x v =) do determine
+which changes were made. We can then use the vc-revert function (C-x v u) to revert the changes. We do this 
+for the following files:
+NEWS
+README
+TODO
+doc/diagmeet.note
+ms/config.bat
+ms/config.site
+po/en.po
+src/diff.h
+src/system.h
+tests/help-version
+
+For the remaining .c files, we want to revert all changes to comments. We need to do this manually.
+
+We open the files in emacs and use vc-diff to determine changes. Next, we manually go through the changes. 
+Anytime we reach a hunk that changes a comment, we can use the diff-apply-hunk function with the revert argument
+(C-u C-c C-a) to revert the hunk.
+
+Here are the reversions made: 
+src/analyze.c: all changes reverted
+src/cmp.c: lines 36, 364, 377 reverted
+src/context.c: all changes reverted
+src/diff.c: lines 40, 57, 92 reverted
+src/diff3.c: lines 35, 159, 1475 reverted
+src/dir.c: lines 84, 125, 234 reverted
+src/ifdef.c: all changes reverted
+src/io.c: all changes reverted
+src/sdiff.c: lines 35, 92, 747 reverted
+src/side.c: all changes reverted
+src/util.c: lines 27, 121, 146, 190, 241, 270, 650 reverted
+
+
+Finally, diff.c and diff3.c failed because the lines didn't match the strings. We can view the .rej 
+files in order to find the necessary lines to replace, then replace them manually.
+
+In diff.c, we have to change these lines:
+-  N_("-l, --paginate                pass output through `pr' to paginate it"),
++  N_("-l, --paginate                pass output through 'pr' to paginate it"),
+
+-  N_("-D, --ifdef=NAME                output merged file with `#ifdef NAME' diffs"),
++  N_("-D, --ifdef=NAME                output merged file with '#ifdef NAME' diffs"),
+
+-  N_("  LTYPE is `old', `new', or `unchanged'.  GTYPE is LTYPE or `changed'."),
++  N_("  LTYPE is 'old', 'new', or 'unchanged'.  GTYPE is LTYPE or 'changed'."),
+
+-  N_("FILES are `FILE1 FILE2' or `DIR1 DIR2' or `DIR FILE...' or `FILE... DIR'."),
++  N_("FILES are 'FILE1 FILE2' or 'DIR1 DIR2' or 'DIR FILE...' or 'FILE... DIR'."),
+
+-  N_("If a FILE is `-', read standard input."),
++  N_("If a FILE is '-', read standard input."),
+
+In diff3.c, we have to changes this line:
+-  N_("-i                          append `w' and `q' commands to ed scripts"),
++  N_("-i                          append 'w' and 'q' commands to ed scripts"),
+
+
+Now, remove untracked files:
+$ git clean -f
+
+
+Checking status:
+$ git status
+
+On branch branch3.0
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	modified:   src/cmp.c
+	modified:   src/diff.c
+	modified:   src/diff3.c
+	modified:   src/dir.c
+	modified:   src/sdiff.c
+	modified:   src/util.c
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+
+Create new patch:
+git diff > quote-3.0-patch.txt
+
+
+Building the modified version of Diffutils suing the commands in README-hacking.
+$ ./bootstrap
+$ ./configure
+$ make
+$ make check
+
+Testing the diff commands:
+$ src/diff . -
+src/diff: cannot compare '-' to a directory
+$ src/diff --help
+The output shows that all ` characters were changed to '.
+
+
+Finally, we do the sanity check where we compare the modified source code to the old version of Diffutils version 3.0.
+
+Copying our modified source files to diffutils-3.0-patch
+$ mkdir diffutils-3.0-patch
+$ cp src/*.c diffutils-3.0-patch
+
+Getting old version and copying source files to diffutils-3.0
+$ cd ..
+$ git clone git://git.savannah.gnu.org/diffutils.git diffutils-old
+$ cd diffutils-old
+$ git checkout v3.0
+$ cp src/*.c ../diffutils/diffutils-3.0
+$ cd ../diffutils
+
+Comparing source files:
+$ src/diff -pru diffutils-3.0 diffutils-3.0-patch/ > quote-3.0-test.txt
+$ diff quote-3.0-patch.txt quote-3.0-test.txt
+
+There are quite a few differences but upon inspection all of them are simply differences in the headers.
+They are innocuous.
+
+
+
+
+
+
+
+
+
+
+
+
+

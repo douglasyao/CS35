@@ -1,0 +1,20 @@
+Differing amount of input lines taken using 'head' command from large text file downloaded from Project Gutenberg. 
+eg. 'head -10 big.txt' for first 10 lines
+
+Using the 'time' command to compare the performances of sfrobu, sfrobu, sfrobs, sfrobu -f, sfrobs -f:
+eg. 'time ./sfrob < <(head -100 big.txt) > garbage'
+
+	|	sfrob		|	sfrobu		|	sfrobs		|	sfrobu -f	|	sfrobs -f	|
+--------|-----------------------|-----------------------|-----------------------|-----------------------|-----------------------|
+Lines   |  real	|  user	|  sys	|  real	|  user	|  sys	|  real	|  user	|  sys	|  real	|  user	|  sys	|  real	|  user	|  sys	|
+--------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
+10	| 0.003	| 0.002	| 0.000	| 0.004	| 0.000	| 0.002	| 0.006	| 0.003	| 0.004	| 0.004	| 0.003	| 0.000	| 0.008	| 0.004	| 0.002	|
+100	| 0.005	| 0.004	| 0.000	| 0.017	| 0.004	| 0.011	| 0.007	| 0.005	| 0.002	| 0.014	| 0.002	| 0.011	| 0.007	| 0.003	| 0.004	|
+1000	| 0.027	| 0.022	| 0.001	| 0.105	| 0.020	| 0.081	| 0.018	| 0.012	| 0.005	| 0.111	| 0.019	| 0.089	| 0.017	| 0.009	| 0.008	|
+10000	| 0.117	| 0.162	| 0.007	| 0.883	| 0.156	| 0.718	| 0.105	| 0.089	| 0.012	| 0.961	| 0.230	| 0.722	| 0.113	| 0.098	| 0.012	|
+100000	| 1.290	| 1.217	| 0.026	| 5.773	| 1.098	| 4.631	| 0.634	| 0.591	| 0.039	| 6.263	| 1.661	| 4.558	| 0.747	| 0.701	| 0.041	|
+1000000	|16.151	|15.521	| 0.207	|57.296	|12.788	|44.062	| 6.664	| 6.286	| 0.279	|1m4.46s|19.568	|44.466	| 7.864	| 7.465	| 0.256	|
+---------------------------------------------------------------------------------------------------------------------------------	
+
+In order from fastest to slowest: sfrobs, sfrobs -f, sfrob, sfrobu, sfrobu -f. Notably, due to the large amount of system calls 
+done by sfrobu, the 'sys' time for sfrobu is much higher compared to sfrob or sfrobs.  	

@@ -1,0 +1,20 @@
+--- timespec.h	2017-02-03 14:13:10.335100000 -0800
+
+2017-02-03  Douglas Yao  <classdya@lnxsrv.seas.ucla.edu>
+
+	* timespec.h (timespec_cmp): In case of extreme differences between times, the
+	values can overflow. Replacing the return values with -1, 0, and 1 fixes this problem.
+
++++ _timespec.h	2017-02-03 14:14:44.994853000 -0800
+@@ -45,8 +45,9 @@
+ static inline int
+ timespec_cmp (struct timespec a, struct timespec b)
+ {
+-  int diff = a.tv_sec - b.tv_sec;
+-  return diff ? diff : a.tv_nsec - b.tv_nsec;
++  if (a.tv_sec < b.tv_sec) {return -1;}
++  else if (a.tv_sec == b.tv_sec) {return 0;}
++  else if (a.tv_sec > b.tv_sec) {return 1;}
+ }
+ 
+ # if ! HAVE_DECL_NANOSLEEP

@@ -1,0 +1,88 @@
+Grabbing Coreutils 7.6:
+wget 'ftp://ftp.gnu.org/gnu/coreutils/coreutils-7.6.tar.gz'
+
+Compile and install Coreutils into temporary directory:
+mkdir coreutilsinstall
+cd coreutils-7.6
+
+Reading the INSTALL file states to use the --prefix option to specify 
+which directory to install in:
+
+Run the following commands:
+
+./configure --prefix --prefix='/u/eng/class/classdya/coreutilsinstall'
+This command checks details about machine and creates the Makefile
+
+make
+Compiles the program code and creates executables in temporary directory.
+
+make install
+Finds the target install in Makefile and executes code to install. Copies 
+executables to final directories.
+
+Copy and paste the following text into a patch file hw3_patch:
+--- /u/eng/class/classdya/coreutils-7.6/src/ls.c
++++ /u/eng/class/classdya/coreutils-7.6/src/nothing
+@@ -2014,7 +2014,6 @@ decode_switches (int argc, char **argv)
+             break;
+ 
+           case long_iso_time_style:
+-          case_long_iso_time_style:
+             long_time_format[0] = long_time_format[1] = "%Y-%m-%d %H:%M";
+             break;
+ 
+@@ -2030,13 +2029,8 @@ decode_switches (int argc, char **argv)
+                    formats.  If not, fall back on long-iso format.  */
+                 int i;
+                 for (i = 0; i < 2; i++)
+-                  {
+-                    char const *locale_format =
+-                      dcgettext (NULL, long_time_format[i], LC_TIME);
+-                    if (locale_format == long_time_format[i])
+-                      goto case_long_iso_time_style;
+-                    long_time_format[i] = locale_format;
+-                  }
++                  long_time_format[i] =
++                    dcgettext (NULL, long_time_format[i], LC_TIME);
+               }
+           }
+       /* Note we leave %5b etc. alone so user widths/flags are honored.  */
+
+Patch the file:
+patch -p5 < hw3_patch
+This implements the changes specified in hw3_patch
+
+Navigate to coreutils-7.6 directory and rebuild:
+make
+This will recompile all files that include ls.c
+
+Running the old version of ls:
+/u/eng/class/classdya/coreutilsinstall/bin/ls -l | head
+-rw-r--r--  1 classdya class    13624 2017-01-03 16:46 assign1.html
+-rw-r--r--  1 classdya class     8668 2013-04-08 09:46 assign2.html
+-rwxr-xr-x  1 classdya class      259 2017-01-23 02:22 buildwords
+drwxr-xr-x 13 classdya class     8192 2017-01-28 17:34 coreutils-7.6
+-rw-r--r--  1 classdya class 10014650 2017-01-28 14:24 coreutils-7.6.tar.gz
+drwxr-xr-x  5 classdya class     4096 2017-01-28 17:43 coreutilsinstall
+drwx------  2 classdya class     4096 2017-01-10 23:47 Desktop
+drwx------  2 classdya class     4096 2017-01-23 02:20 Documents
+drwx------  2 classdya class     4096 2017-01-10 23:47 Downloads
+
+Running the new version of ls:
+/u/eng/class/classdya/coreutils-7.6/src/ls -l | head
+-rw-r--r--  1 classdya class    13624 Jan  3 16:46 assign1.html
+-rw-r--r--  1 classdya class     8668 Apr  8  2013 assign2.html
+-rwxr-xr-x  1 classdya class      259 Jan 23 02:22 buildwords
+drwxr-xr-x 13 classdya class     8192 Jan 28 17:34 coreutils-7.6
+-rw-r--r--  1 classdya class 10014650 Jan 28 14:24 coreutils-7.6.tar.gz
+drwxr-xr-x  5 classdya class     4096 Jan 28 17:43 coreutilsinstall
+drwx------  2 classdya class     4096 Jan 10 23:47 Desktop
+drwx------  2 classdya class     4096 Jan 23 02:20 Documents
+drwx------  2 classdya class     4096 Jan 10 23:47 Downloads
+
+For the POSIX style, the time will be replaced with the year if the file is
+older than one year. 
+
+
+
+	

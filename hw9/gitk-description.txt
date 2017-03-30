@@ -1,0 +1,11 @@
+Top left: This window shows the tree structure of the commits and the branches they come from.
+Also included are the commit messages. Below this is the SHA1 ID of the commit.
+
+Top middle: Names and emails of authors responsible for commits in the top left window.
+
+Top right: Dates of the commits in the same row
+
+Bottom left: At the top of the window are the author, committer, parent, child, and branch information.
+Below that are the file changes in diff format.
+
+Bottom right: Files that are impacted by the selected commit

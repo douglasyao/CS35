@@ -1,0 +1,114 @@
+1. From the manual page of man:
+-K     Search for the specified string in *all* man pages.
+
+2. Using the which command:
+[classdya@lnxsrv01 ~]$ which cp
+/bin/cp
+[classdya@lnxsrv01 ~]$ which wc
+/usr/bin/wc
+
+3. [classdya@lnxsrv01 ~]$ find /usr/bin -executable -type f -name ?
+/usr/bin/w
+/usr/bin/[
+[classdya@lnxsrv01 ~]$ whatis w
+w                    (1)  - Show who is logged on and what they are doing
+
+4. Use 'ls -l /usr/bin' to list all files. We see the following:
+lrwxrwxrwx   1 root root          23 Aug 28  2015 emacs -> /etc/alternatives/emacs
+This means that /usr/bin/emacs is actually a soft link to /etc/alternatives/emacs.
+
+5. g+s sets the group of the file as the group that owns the file. 
+This means that the file is executed as the group that owns it, 
+rather than the group executing the file.
+o-w removes the write ability of "others", 
+or users not the owner of the file or members of the group
+
+6. Include the argument '-mtime -21' to the find command
+
+7. Include the arguments '-type d -mtime -21' to the find command
+
+8. [classdya@lnxsrv01 ~]$ which find
+/bin/find
+Using 'ls -l /bin' yields the following symbolic links:
+lrwxrwxrwx 1 root root        4 Dec 22  2015 awk -> gawk
+lrwxrwxrwx 1 root root        4 Aug 29 13:01 csh -> tcsh
+lrwxrwxrwx 1 root root        8 Jun 18  2012 dnsdomainname -> hostname
+lrwxrwxrwx 1 root root        8 Jun 18  2012 domainname -> hostname
+lrwxrwxrwx 1 root root        4 Oct  5 15:17 egrep -> grep
+lrwxrwxrwx 1 root root        2 Jan  6 13:56 ex -> vi
+lrwxrwxrwx 1 root root        4 Oct  5 15:17 fgrep -> grep
+lrwxrwxrwx 1 root root        3 Aug  8 14:47 gtar -> tar
+lrwxrwxrwx 1 root root       41 Aug 28  2015 iptables-xml -> /etc/alternatives/bin-iptables-xml.x86_64
+lrwxrwxrwx 1 root root       20 Aug 28  2015 iptables-xml-1.4.7 -> /sbin/iptables-multi
+lrwxrwxrwx 1 root root       21 May 16  2016 ksh -> /etc/alternatives/ksh
+lrwxrwxrwx 1 root root       22 Jan  2  2015 mail -> /etc/alternatives/mail
+lrwxrwxrwx 1 root root        8 Jun 18  2012 nisdomainname -> hostname
+lrwxrwxrwx 1 root root        4 Jun 18  2012 rnano -> nano
+lrwxrwxrwx 1 root root        2 Jan  6 13:56 rvi -> vi
+lrwxrwxrwx 1 root root        2 Jan  6 13:56 rview -> vi
+lrwxrwxrwx 1 root root        4 May 16  2016 sh -> bash
+lrwxrwxrwx 1 root root       10 Jun 18  2012 traceroute6 -> traceroute
+lrwxrwxrwx 1 root root        2 Jan  6 13:56 view -> vi
+lrwxrwxrwx 1 root root        8 Jun 18  2012 ypdomainname -> hostname
+This comes out to 20 total symbolic links. 
+
+9. Using 'ls -lt /usr/lib' and scrolling to the bottom: 
+-rwxr-xr-x  1 root root    28776 Mar  3  2010 libgamin-1.so.0.1.10
+
+10. [classdya@lnxsrv01 ~]$ which locale
+/usr/bin/locale
+
+11. After opening emacs, entering 'C-h a' then 'sort':
+Buffer-menu-sort              M-x ... RET
+   Sort the buffer menu by COLUMN.
+Buffer-menu-sort-by-column    M-x ... RET
+   Sort the buffer menu by the column clicked on.
+ibuffer-invert-sorting        M-x ... RET
+   Toggle whether or not sorting is in reverse order.
+ibuffer-toggle-sorting-mode   M-x ... RET
+   Toggle the current sorting mode.
+rmail-sort-by-author          M-x ... RET
+   Sort messages of current Rmail buffer by author.
+rmail-sort-by-correspondent   M-x ... RET
+   Sort messages of current Rmail buffer by other correspondent.
+rmail-sort-by-date            M-x ... RET
+   Sort messages of current Rmail buffer by "Date" header.
+rmail-sort-by-labels          M-x ... RET
+   Sort messages of current Rmail buffer by labels.
+rmail-sort-by-lines           M-x ... RET
+   Sort messages of current Rmail buffer by the number of lines.
+rmail-sort-by-recipient       M-x ... RET
+   Sort messages of current Rmail buffer by recipient.
+rmail-sort-by-subject         M-x ... RET
+   Sort messages of current Rmail buffer by "Subject" header.
+sort-columns                  M-x ... RET
+   Sort lines in region alphabetically by a certain range of columns.
+sort-fields                   M-x ... RET
+   Sort lines in region lexicographically by the ARGth field of each line.
+sort-lines                    M-x ... RET
+   Sort lines in region alphabetically; argument means descending order.
+sort-numeric-fields           M-x ... RET
+   Sort lines in region numerically by the ARGth field of each line.
+sort-pages                    M-x ... RET
+   Sort pages in region alphabetically; argument means descending order.
+sort-paragraphs               M-x ... RET
+   Sort paragraphs in region alphabetically; argument means descending order.
+sort-regexp-fields            M-x ... RET
+   Sort the region lexicographically as specified by RECORD-REGEXP and KEY.
+   
+12. After entering 'C-h r' to access the emacs manual 
+and scrolling to 'Key Index':
+C-M-a: move to the beginning of the current or preceding defun
+C-M-b: move backward over a balanced expression
+C-M-c: recursive edit
+C-M-d: move down in parenthesis structure
+C-M-e: move to the end of the current or following defun
+C-M-f: move forward over a balanced expression
+C-M-h: put region around whole current or following defun
+
+13. C-g cancels a partially typed command or one which is still running.
+
+14. Yank reinserts text that was previously killed.
+
+15. The emacs dired commands displays hidden files, whereas ls -l does not.
+

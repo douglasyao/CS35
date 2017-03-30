@@ -1,0 +1,130 @@
+For this lab, I did not have a partner, so I ran Ubuntu on two virtual machines on the same computer. 
+I downloaded the Ubuntu disk image online and I used VirtualBox for the virtual machines. By default, 
+the VirtualBox networking is set to NAT, so the virtual machine cannot run a server. By changing one 
+of the virtual machines to bridged networking, that virtual machine can now run a server. I did this 
+under the Networking tab of Settings in the VirtualBox GUI.
+
+To check that I have openssh-server and openssh-client installed, I ran the following:
+
+$ dpkg --get-selections | grep openssh
+openssh-client                    install
+
+We are missing openssh-server, so I installed using:
+
+$ sudo apt-get install openssh-server
+
+Next, I generated the public and private keys on the host server. The public key will be shared with the 
+client and will be used for host validation. To prove to the client that the host is the owner of the key, 
+the client will encrypt a message using the public key, which the host will be able to decrypt if it 
+possesses the private key.
+
+$ ssh-keygen
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/ubuntu/.ssh/id_rsa): 
+Created directory '/home/ubuntu/.ssh'.
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /home/ubuntu/.ssh/id_rsa.
+Your public key has been saved in /home/ubuntu/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:9GU35sPeXqNQ9QZIiBx9N9b2cE6Oc4opkgzClWAkza0 ubuntu@ubuntu
+The key's randomart image is:
++---[RSA 2048]----+
+|  .++o o.+ ..  . |
+|   oo + o o...= =|
+|   . o  .  .+o=@.|
+|    E .. . o =+o*|
+|     . oS..  +++o|
+|        + . +..+ |
+|         . o  ..o|
+|            . ..o|
+|             .  .|
++----[SHA256]-----+
+
+When prompted for a passcode, I left it blank.
+
+I then added a directory for the client in the home directory:
+
+$ sudo useradd -d /home/client/ -m client
+
+I created a password for the client:
+$ sudo passwd client
+Enter new UNIX password: 
+Retype new UNIX password: 
+passwd: password updated successfully
+
+Creating a directory for the host to store the client's public key. This is necessary to 
+authenticate the client in the same way that the host is validated for the client:
+$ cd /home/client
+$ sudo mkdir .ssh
+
+Setting the client as the owner and changing permissions to be only readable, writable, and 
+executable to the client:
+$ sudo chown -R client .ssh
+$ sudo chmod 700 .ssh
+
+Next, we check the IP address of the host using the 'ifconfig' command:
+
+$ ifconfig
+enp0s3: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.47.221.141  netmask 255.255.255.0  broadcast 10.47.221.255
+        inet6 fe80::d530:6ddf:9677:81cf  prefixlen 64  scopeid 0x20<link>
+        ether 08:00:27:7a:4b:f2  txqueuelen 1000  (Ethernet)
+        RX packets 23583  bytes 21564237 (21.5 MB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 7077  bytes 1173077 (1.1 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1  (Local Loopback)
+        RX packets 22359  bytes 1441093 (1.4 MB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 22359  bytes 1441093 (1.4 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+Under enp0s3 we can see that the IP address is 10.47.221.141
+
+To confirm that we can reach the host from the client, I used the 'ping' command on the client side:
+
+$ ping 10.47.221.141
+PING 10.47.221.141 (10.47.221.141) 56(84) bytes of data.
+64 bytes from 10.47.221.141: icmp_seq=1 ttl=64 time=2.89 ms
+64 bytes from 10.47.221.141: icmp_seq=2 ttl=64 time=1.70 ms
+64 bytes from 10.47.221.141: icmp_seq=3 ttl=64 time=1.78 ms
+^C
+--- 10.47.221.141 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 1.702/2.126/2.890/0.541 ms
+
+Now that everything was set up on the server side, I could move on to the client side.
+
+Generate public and private keys:
+
+$ ssh-keygen
+
+Next I copied the public key to the ssh folder within the server for key authentication:
+
+$ ssh-copy-id -i client@10.47.221.141
+
+Adding my private key to the authentication agent ssh-agent, which securely stores the private key 
+and makes it so that it is retrieved automatically each time I connect to the server. This means I 
+don't have to type the passphrase for the private key each time I use it.
+
+$ ssh-add
+
+Now, I can ssh into the host server:
+
+$ ssh client@10.47.221.141
+
+When the client adds a file using 'touch', both the host and the client can now see the file on the host server. 
+
+X forwarding involves tunneling X protocol connections via SSH, allowing the client to use X
+on a remote X server. To enable X forwarding, we can add the -X option to ssh:
+
+$ ssh -X client@10.47.221.141
+
+Now, we can open a new shell window on the host using xterm:
+
+$ xterm

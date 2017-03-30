@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Loops over all files that start with . and keeps the regular files in HFILES
+HFILES=()
+for f in $1/\.*; do
+  if [[ ! "$(file -b "$f")" =~ symbolic\ link|directory ]]
+    then
+      HFILES+=("$f")
+    fi
+done
+
+# Loops over the rest of the files and keeps the regular files in FILES
+FILES=()
+for f in $1/*; do
+  if [[ ! "$(file -b "$f")" =~ symbolic\ link|directory ]]
+    then
+      FILES+=("$f")
+    fi
+done
+
+# Sorts HFILES and FILES
+IFS=$'\n'
+HFILES=($(sort <<<"${HFILES[*]}"))
+FILES=($(sort <<<"${FILES[*]}"))
+unset IFS
+
+# Compares each possible combination of files in HFILES and FILES.
+# Because files are sorted, the first file each pair will always be 
+# lexicographically first. If cmp finds no differences and does not
+# report an error, the second file is replaced with a hard link to the first.
+eval "set -- ""$(printf "\"%s\" " "${HFILES[@]}")"\
+"$(printf "\"%s\" " "${FILES[@]}")"""
+for a; do
+  shift
+  for b; do
+    if [[ ! $(cmp "$a" "$b" 2>&1) ]]
+    then 
+      rm "$b"
+      ln "$a" "$b"         
+    fi
+  done
+done

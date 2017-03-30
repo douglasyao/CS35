@@ -1,0 +1,160 @@
+After writing the program in C, compile using:
+$ gcc -o tr2b tr2b.c
+$ gcc -o tr2u tr2u.c
+
+To get a file with 5 MB, I downloaded a txt file containing the text for The 
+Adventures of Sherlock Holmes from Project Gutenberg, which is about 6 MB. 
+
+
+
+Using strace to find system calls:
+Outputting to terminal: 
+$ strace ./tr2b AB CD < big.txt
+...
+read(0, "nominal.'\n\n\" 'What do you call p"..., 65536) = 65536
+write(1, "\" 'Is purely nominal.'\n", 23) = 23
+write(1, "\n", 1)                       = 1
+write(1, "\" 'What do you call purely nomin"..., 37) = 37
+write(1, "\n", 1)                       = 1
+write(1, "\" 'Well, you have to be in the o"..., 264) = 264
+write(1, "\n", 1)                       = 1
+...
+A single system call is used to read in a block of text of size 65536.
+Each line and newline are written by a separate system call. 
+
+Using the '-c' flag in strace shows how many total calls:
+$ strace -c ./tr2b AB CD < big.txt
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 88.27    0.012569           0    128534           write
+ 11.04    0.001572          15       102           read
+  0.70    0.000099          50         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         4           fstat
+  0.00    0.000000           0        10           mmap
+  0.00    0.000000           0         3           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.014240                128662         1 total
+
+
+$ strace ./tr2u AB CD < big.txt
+...
+read(0, "T", 1)                         = 1
+write(1, "T", 1)                        = 1
+read(0, "h", 1)                         = 1
+write(1, "h", 1)                        = 1
+read(0, "e", 1)                         = 1
+write(1, "e", 1)                        = 1
+read(0, " ", 1)                         = 1
+write(1, " ", 1)                        = 1
+...
+Every single character receives two separate system calls, one to read in the
+character and one to write it.
+
+$ strace -c ./tr2u AB CD < big.txt
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 55.46    0.669855           0   6488666           write
+ 44.54    0.537907           0   6488668           read
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         2           fstat
+  0.00    0.000000           0         8           mmap
+  0.00    0.000000           0         3           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    1.207762              12977356         1 total
+
+
+
+
+Copying to file:
+$ strace ./tr2b AB CD < big.txt > out.txt
+...
+read(0, "nominal.'\n\n\" 'What do you call p"..., 65536) = 65536
+write(1, "The Project Gutenberg EDook of T"..., 65536) = 65536
+read(0, "urning towards anyone else. But "..., 65536) = 65536
+write(1, "nominal.'\n\n\" 'What do you call p"..., 65536) = 65536
+read(0, " upon the inner flap, just above"..., 65536) = 65536
+write(1, "urning towards anyone else. Dut "..., 65536) = 65536
+...
+
+Now, read and write are both called for blocks of 65536 bytes.
+
+$ strace -c ./tr2b AB CD < big.txt > out.txt
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+  0.00    0.000000           0       102           read
+  0.00    0.000000           0       100           write
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         4           fstat
+  0.00    0.000000           0        10           mmap
+  0.00    0.000000           0         3           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.000000                   228         1 total
+
+
+$ strace ./tr2u AB CD < big.txt > out.txt
+...
+read(0, "T", 1)                         = 1
+write(1, "T", 1)                        = 1
+read(0, "h", 1)                         = 1
+write(1, "h", 1)                        = 1
+read(0, "e", 1)                         = 1
+write(1, "e", 1)                        = 1
+read(0, " ", 1)                         = 1
+write(1, " ", 1)                        = 1
+...
+
+$ strace -c ./tr2u AB CD < big.txt > out.txt
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 57.46    0.733911           0   6488666           write
+ 42.54    0.543303           0   6488668           read
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         2           fstat
+  0.00    0.000000           0         8           mmap
+  0.00    0.000000           0         3           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    1.277214              12977356         1 total
+
+
+Using the buffered version results in much less system calls. The buffered version also has
+differing amounts of system calls depending on whether it's writing to the terminal or a file. When 
+writing to the terminal, each line and trailing newline receive separate system calls, whereas 
+when writing to a file, each system call writes a block of text of set size. 
+
+
+Using 'time' to measure performance:
+$ time ./tr2b AB CD < big.txt
+real	0m0.608s
+user	0m0.330s
+sys	0m0.171s
+
+$ time ./tr2u AB CD < big.txt
+real	0m8.025s
+user	0m0.481s
+sys	0m7.540s
+
+

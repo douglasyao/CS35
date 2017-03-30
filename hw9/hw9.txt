@@ -1,0 +1,105 @@
+Checking out version 3.0 of Diffutils into a new branch called "quote:
+
+$ git checkout v3.0 -b quote
+
+Installing patch:
+
+$ patch -p1 < quote-3.0-patch.txt 
+patching file src/cmp.c
+patching file src/diff.c
+patching file src/diff3.c
+patching file src/dir.c
+patching file src/sdiff.c
+patching file src/util.c
+
+Use the emacs function add-change-log-entry-other-window (C-x 4 a) to add a ChangeLog entry to the patch.
+
+We open emacs and type C-x 4 a to create a new ChangeLog entry, then adapt the change log from the original patch. 
+
+The ChangeLog looks like this:
+
+2017-03-14  Douglas Wang Yao  <classdya@lnxsrv04.seas.ucla.edu>
+    
+    maint: quote 'like this' or "like this", not `like this'
+    
+    This is in response to a recent change in the GNU coding standards,
+    which now suggest quoting 'like this' or "like this", instead of
+    `like this' or ``like this''.
+    
+    NOTE: only source code is changed. ` symbols in comments are unchanged.
+
+    * src/cmp.c (try_help, specify_ignore_initial, usage, main):
+    * src/diff.c (main, try_help, option_help_msgid, specify_value)
+    (compare_files):
+    * src/diff3.c (main, try_help, option_help_msgid, usage)
+    (read_diff):
+    * src/dir.c (compare_names):
+    * src/sdiff.c (try_help, usage, check_child_status, main):
+    * src/util.c (finish_output):
+
+    Quote 'like this' in output.
+    
+Now, commit changes:
+$ git commit -aF ChangeLog 
+
+Generate the formatted patch:
+$ git format-patch -1 --stdout > formatted-patch.txt
+
+My partner was An Nguyen.
+
+Creating a new branch of 3.0 called 'partner':
+$ git checkout v3.0 -b partner
+
+Applying the patch:
+$ git am partner-formatted-patch.txt
+Applying: 2017-03-17 An Thai Nguyen <ant@lnxsrv01.seas.ucla.edu>
+
+Building the resulting system:
+$ ./bootstrap
+$ ./configure
+$ make 
+
+Checking that patch works:
+$ src/diff . -
+src/diff: cannot compare '-' to a directory
+$ src/diff --help
+
+No ` symbols are obesrved.
+
+Verify that ChangeLog entry works using 'make distdir':
+$ make distdir 
+
+A new directory called diffutils-3.0.1-d67f is created. When we enter it and examine the ChangeLog file,
+we can see that it includes our ChangeLog at the top:
+$ cd diffutils-3.0.1-d67f
+$ head ChangeLog
+2017-03-17  Douglas Wang Yao  <classdya@lnxsrv04.seas.ucla.edu>
+
+	2017-03-14 Douglas Wang Yao <classdya@lnxsrv04.seas.ucla.edu>
+		maint: quote 'like this' or "like this", not `like this'
+
+		This is in response to a recent change in the GNU coding standards,
+		which now suggest quoting 'like this' or "like this", instead of
+		`like this' or ``like this''.
+
+		NOTE: only source code is changed. ` symbols in comments are unchanged.
+
+
+To run gitk on the GNU Emacs git repository, we need to first allow X-11 forwarding through ssh. 
+$ ssh -X classdya@lnxsrv.seas.ucla.edu
+
+Then, we navigate to the folder containing the repository:
+$ cd ~eggert/src/gnu/emacs
+$ gitk
+
+The newest merge that is not newer than 2015-01-25 is:
+
+Merge branch 'master' into xwidget 2015-01-25 12:19:27
+
+
+        
+
+
+
+
+

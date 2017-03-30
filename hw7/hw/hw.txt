@@ -1,0 +1,20 @@
+1. Yes, the network will still be secure. The data is encrypted using the receiver's
+public key, which will be visible to the attacker, but can only be decrypted by the receiver's
+private key, which is located only on the receiver's computer. 
+
+(1) The network will be secure. The private key is still only located on the receiver's computer, 
+and knowing the passcode for the private key through tracking keystrokes is useless unless the attacker 
+actually has access to the private key. The private key is randomly generated and cannot be reconstructed
+by knowing keystrokes. 
+
+(2) The network will possibly no longer be secure. If the private key is stored on the USB, then 
+the attacker will be able to access it and decode the encrypted communications. If the key is not 
+stored on the USB, then the network will still be safe. 
+
+2. The detached signature is created using the private key of the signer, and it is verified by
+the receiver using the public key. However, we don't actually know if the private/public keys
+were created by the original owner of the files. If an attacker intercepted the data and replaced the signature 
+and public key with his own, then the signature would still match the private key, and gpg --verify would not 
+detect any issues. One way to solve this problem is for the owner of the files to provide his public key to a 
+trustworthy third party, so it can be confirmed that the public key received by the receiver indeed belongs to 
+the owner of the files.
